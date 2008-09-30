@@ -2,4 +2,5 @@
 name = GMap Overlays
 description = Misc. overlays for gmap.
 package = Location
-dependencies = gmap
+core = 6.x
+dependencies[] = gmap
