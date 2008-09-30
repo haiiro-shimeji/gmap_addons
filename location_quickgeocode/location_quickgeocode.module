@@ -6,17 +6,13 @@
  * Short description.
  */
 
-function location_quickgeocode_menu($may_cache) {
-  if ($may_cache) {
-    $items = array();
-    $items[] = array(
-      'path' => 'location_quickgeocode',
-      'callback' => 'location_quickgeocode_callback',
-      'access' => user_access('submit latitude/longitude'),
-      'type' => MENU_CALLBACK,
-    );
-    return $items;
-  }
+function location_quickgeocode_menu() {
+  $items['location_quickgeocode'] = array(
+    'page callback' => 'location_quickgeocode_callback',
+    'access arguments' => array('submit latitude/longitude'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
 }
 
 function location_quickgeocode_callback() {
@@ -29,6 +25,7 @@ function location_quickgeocode_callback() {
     }
   }
   echo drupal_to_js(location_latlon_exact($location));
+  return;
 }
 
 
