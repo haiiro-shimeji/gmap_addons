@@ -14,7 +14,7 @@ function gmap_tracks_gmap($op, &$map = NULL) {
     case 'macro_multiple':
       return array('track');
     case 'parse_macro':
-      if ($map['track']) {
+      if (isset($map['track']) && is_array($map['track'])) {
         foreach ($map['track'] as $track) {
           $t = array();
           $cp = strpos($track, ':');
@@ -53,20 +53,29 @@ function gmap_tracks_gmap($op, &$map = NULL) {
  */
 function _gmap_tracks_parse($track) {
   $points = array();
-  // @@@ Oversimplified OziExplorer PLT parser.
-  // @@@ This needs improvement for various file types.
-  if ($handle = fopen($track, 'r')) {
-    while (!feof($handle)) {
-      $line = fgets($handle, 4096);
-      $line = explode(',', $line);
-      if (count($line) == 7) {
-        $points[] = array(
-          (float)trim($line[0]), // latitude
-          (float)trim($line[1]), // longitude
-        );
+  $file = file_create_path($track);
+  if ($file === FALSE) {
+    drupal_set_message(t('Invalid path to track file!'));
+  }
+  else if (!file_exists($file)) {
+    drupal_set_message(t('Track file not found!'));
+  }
+  else {
+    // @@@ Oversimplified OziExplorer PLT parser.
+    // @@@ This needs improvement for various file types.
+    if ($handle = fopen($file, 'r')) {
+      while (!feof($handle)) {
+        $line = fgets($handle, 4096);
+        $line = explode(',', $line);
+        if (count($line) == 7) {
+          $points[] = array(
+            (float)trim($line[0]), // latitude
+            (float)trim($line[1]), // longitude
+          );
+        }
       }
+      fclose($handle);
     }
-    fclose($handle);
   }
   return $points;
 }

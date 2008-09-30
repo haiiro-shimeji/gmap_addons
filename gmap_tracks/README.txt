@@ -5,7 +5,7 @@ This will let you use PLT tracks.
 --- macro extensions ---
   track - Draws a line based on the points in the .plt file.
 
-[gmap |track=red/5/0.7:files/track.plt]
+[gmap |track=red/5/0.7:track.plt]
 
 @@@ The part before the : is currently not working.
 
