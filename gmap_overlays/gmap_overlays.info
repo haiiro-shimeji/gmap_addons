@@ -1,0 +1,5 @@
+; $Id$
+name = GMap Overlays
+description = Misc. overlays for gmap.
+package = Location
+dependencies = gmap

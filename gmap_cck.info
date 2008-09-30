@@ -1,0 +1,5 @@
+; $Id$
+name = GMap CCK Field
+description = Filter to allow insertion of a google map into a node
+package = Location
+dependencies = gmap gmap_macro_builder

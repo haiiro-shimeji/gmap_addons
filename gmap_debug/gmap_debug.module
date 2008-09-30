@@ -1,0 +1,37 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Debugging helpers for gmap.
+ */
+
+/**
+ * Implementation of hook_block().
+ */
+function gmap_debug_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      return array(
+        'gmap_debug' => array(
+          'info' => t('GMap Debug'),
+        ),
+      );
+
+    case 'view':
+      if ($delta = 'gmap_debug') {
+        drupal_add_js(drupal_get_path('module', 'gmap_debug') .'/gmap_debug.js');
+        return array(
+          'subject' => t('GMap Debug'),
+          'content' => theme('links', array(
+            'forceresize' => array(
+              'title' => t('Force size check'),
+              'href' => '',
+              'attributes' => array('id' => 'gmap-debug-forcesizecheck'),
+            ),
+          )),
+        );
+      }
+
+  }
+}

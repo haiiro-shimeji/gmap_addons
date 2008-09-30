@@ -1,0 +1,5 @@
+; $Id$
+name = GMap Extra Baselayers
+description = Enable adding the special Moon, Mars, and Sky map types to a map.
+package = Location
+dependencies = gmap

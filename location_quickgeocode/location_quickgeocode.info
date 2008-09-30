@@ -1,0 +1,5 @@
+; $Id$
+name = Location QuickGeocode
+description = Bulk data entry modifications.
+dependencies = gmap location
+package = Location
