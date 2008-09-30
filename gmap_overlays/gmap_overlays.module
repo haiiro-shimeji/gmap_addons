@@ -11,7 +11,7 @@
 /**
  * Implementation of hook_gmap().
  */
-function gmap_overlays_gmap($op, &$map = NULL) {
+function gmap_overlays_gmap($op, &$map) {
   switch ($op) {
     case 'pre_theme_map':
       if (isset($map['overlay']) && is_array($map['overlay'])) {
@@ -40,7 +40,7 @@ function gmap_overlays_gmap($op, &$map = NULL) {
     case 'macro_multiple':
       return array('overlay');
     case 'parse_macro':
-      if ($map['overlay']) {
+      if (!empty($map['overlay'])) {
         $temp = $map['overlay'];
         $overlays = array();
         foreach ($temp as $overlay) {
@@ -80,7 +80,7 @@ function gmap_overlays_gmap($op, &$map = NULL) {
             $overlays[] = $s;
           }
         }
+        return array('overlay' => $overlays);
       }
-      return array('overlay' => $overlays);
   }
 }
