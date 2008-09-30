@@ -2,4 +2,5 @@
 name = GMap Debugging
 description = Extra debugging features for GMap.
 package = Development
-dependencies = gmap
+core = 6.x
+dependencies[] = gmap

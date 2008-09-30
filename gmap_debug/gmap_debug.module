@@ -20,7 +20,7 @@ function gmap_debug_block($op = 'list', $delta = 0, $edit = array()) {
 
     case 'view':
       if ($delta = 'gmap_debug') {
-        drupal_add_js(drupal_get_path('module', 'gmap_debug') .'/gmap_debug.js');
+        drupal_add_js(drupal_get_path('module', 'gmap_debug') .'/gmap_debug.js', 'module', 'header', FALSE, TRUE, FALSE);
         return array(
           'subject' => t('GMap Debug'),
           'content' => theme('links', array(
