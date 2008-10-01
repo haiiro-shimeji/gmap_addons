@@ -21,15 +21,12 @@ function gmap_debug_block($op = 'list', $delta = 0, $edit = array()) {
     case 'view':
       if ($delta = 'gmap_debug') {
         drupal_add_js(drupal_get_path('module', 'gmap_debug') .'/gmap_debug.js', 'module', 'header', FALSE, TRUE, FALSE);
+        $output = '';
+        $output .= theme('menu_item', l(t('Force size check'), '', array('attributes' => array('id' => 'gmap-debug-forcesizecheck'))), FALSE);
+        $output .= theme('menu_item', l(t('Reboot map'), '', array('attributes' => array('id' => 'gmap-debug-reboot'))), FALSE);
         return array(
           'subject' => t('GMap Debug'),
-          'content' => theme('links', array(
-            'forceresize' => array(
-              'title' => t('Force size check'),
-              'href' => '',
-              'attributes' => array('id' => 'gmap-debug-forcesizecheck'),
-            ),
-          )),
+          'content' => theme('menu_tree', $output),
         );
       }
 
