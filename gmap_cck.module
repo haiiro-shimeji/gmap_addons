@@ -91,13 +91,12 @@ function gmap_cck_field_info() {
 function gmap_cck_field_settings($op, $field) {
   switch ($op) {
     case 'form':
-      $def = array(
-        'maptype' => $field['maptype'],
-        'controltype' => $field['controltype'],
-        'width' => $field['width'],
-        'height' => $field['height'],
-        'latlong' => $field['latlong'],
-      );
+      $def = gmap_defaults();
+      foreach (array('maptype', 'controltype', 'width', 'height', 'latlong') as $key) {
+        if (isset($field[$key]) && !empty($field[$key])) {
+          $def[$key] = $field[$key];
+        }
+      }
 
       $form = gmap_macro_builder_form($def);
       $form['#title'] = t('Google Map settings');
