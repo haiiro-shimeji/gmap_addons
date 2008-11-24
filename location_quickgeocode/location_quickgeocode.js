@@ -7,10 +7,12 @@ Drupal.behaviors.location_quickgeocode = function (context) {
 
     // Get the map in a totally roundabout way.
     var obj = false;
-    var mapid = $(fieldset).find('div.gmap-map')[0].id;
-    setTimeout(function() {
-      obj = Drupal.gmap.getMap(mapid);
-    }, 0);
+    if ($(fieldset).find('div.gmap-map').length) {
+      var mapid = $(fieldset).find('div.gmap-map')[0].id;
+      setTimeout(function() {
+        obj = Drupal.gmap.getMap(mapid);
+      }, 0);
+    }
 
     $(this).click(function() {
       if (obj) {

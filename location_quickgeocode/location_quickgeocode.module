@@ -37,8 +37,13 @@ function location_quickgeocode_locationapi(&$obj, $op, $a3 = NULL, $a4 = NULL, $
     case 'fields':
       return array('fake_dogeocodebutton' => t('QuickGeocode'));
 
+    case 'defaults':
+      return array(
+        'fake_dogeocodebutton' => array('default' => 0, 'collect' => 1),
+      );
+
     case 'virtual fields':
-      return array('fake_dogeocodebutton');
+      return array('fake_dogeocodebutton' => t('QuickGeocode'));
 
     case 'field_expand':
       if ($a3 == 'fake_dogeocodebutton') {
@@ -55,5 +60,11 @@ function location_quickgeocode_locationapi(&$obj, $op, $a3 = NULL, $a4 = NULL, $
       }
       break;
 
+    case 'isunchanged':
+      // ALWAYS unchanged.
+      if ($a3 == 'fake_dogeocodebutton') {
+        return TRUE;
+      }
+      break;
   }
 }
