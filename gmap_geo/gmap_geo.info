@@ -1,0 +1,7 @@
+name = GMap Geo Integration
+description = provides a gmap location picker widget for geo fields.
+package = Geo
+dependencies[] = geo
+dependencies[] = content
+dependencies[] = gmap
+core = 6.x
