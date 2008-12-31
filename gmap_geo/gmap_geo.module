@@ -119,6 +119,10 @@ function gmap_geo_theme() {
       'function' => 'theme_gmap_geo_formatter',
       'arguments' => array('element' => NULL),
     ),
+    'gmap_geo_formatter_gmap_geo_simplify' => array(
+      'function' => 'theme_gmap_geo_formatter',
+      'arguments' => array('element' => NULL),
+    ),
   );
 }
 
@@ -131,14 +135,21 @@ function theme_gmap_geo_picker($element) {
 
 /**
  * Implementation of hook_field_formatter_info().
+ * Note that the formatters don't actually work for geo_data fields yet, because
+ * that field type doesn't (yet) provide its data in WKT.
  */
 function gmap_geo_field_formatter_info() {
   return array(
     'gmap_geo' => array(
       'label' => t('GMap'),
-      'field types' => array('geo'),
+      'field types' => array('geo', 'geo_data'),
       'multiple values' => CONTENT_HANDLE_CORE,
 //      'multiple values' => CONTENT_HANDLE_MODULE,
+    ),
+    'gmap_geo_simplify' => array(
+      'label' => t('Simplified Polygon on a GMap'),
+      'field types' => array('geo', 'geo_data'),
+      'multiple values' => CONTENT_HANDLE_CORE,
     ),
   );
 }
@@ -163,6 +174,10 @@ function gmap_geo_field_formatter_info() {
  *
  * - Autozoom doesn't yet zoom for polygons and lines; this field formatter 
  * doesn't provide any autozoom stuff either.
+ *
+ * - Polygons don't get drawn at all by gmap unless at least one of their
+ * vertices is within the visible area. If not all of a polygon's vertices are
+ * within the visible area, they may be rendered incorrectly.
  */
 function theme_gmap_geo_formatter($element) {
   static $count = 0;
@@ -195,33 +210,41 @@ function theme_gmap_geo_formatter($element) {
       break;
     case 'POLYGON':
       // map center
-      $centroid = _gmap_geo_from_wkt($element['#item']['centroid']);
-      $coords = explode(' ', $centroid['data'][0]);
-      $map['latitude'] = $coords[0];
-      $map['longitude'] = $coords[1];
-      // don't break...
-    case 'LINESTRING':
+      $centroid_raw = _gmap_geo_from_wkt($element['#item']['centroid']);
+      $centroid = explode(' ', $centroid_raw['data'][0]);
+      $map['latitude'] = $centroid[0];
+      $map['longitude'] = $centroid[1];
+    case 'LINESTRING': // polys AND lines
       // get feature coordinates
       foreach($geodata['data'] as $point) {
         $coords = explode(' ', $point);
         $shape_coords[] = $coords;
       }
+      
+      // not sure how this would handle line data -- likely it would be fine, if you worked out a centroid.
+      if ($geodata['type'] == 'POLYGON' && $element['#formatter'] == 'gmap_geo_simplify') {
+        module_load_include('inc', 'gmap_geo', 'simplify');
+        $shape_coords = gmap_geo_simplify($shape_coords, $centroid);
+      }
 
       // if the poly/line is too complex, let's not crash the browser...
-      if (count($shape_coords) < 700) {
+      if (count($shape_coords) < 200) {
         $map['shapes'][] = array(
           'type' => ($geodata['type'] == 'POLYGON' ? 'polygon' : 'line'),
           'points' => $shape_coords,
         );
       }
       else {
-        return t('This shape has too many points to display on a Google Map');
+        $map['markers'][] = array(
+          'longitude' => $centroid[0],
+          'latitude' => $centroid[1],
+          'text' => t('This shape has too many points to display on a Google Map')
+        );
       }
       break;
   }
-
+  
   if ($map) {
-    $map['id'] = $element['#field_name'];
     $map['behavior'] = array('autozoom');
     if (isset($field_map['zoom'])) {
       $map['maxzoom'] = $field_map['zoom'];
