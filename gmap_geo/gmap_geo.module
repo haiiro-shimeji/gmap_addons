@@ -143,13 +143,12 @@ function gmap_geo_field_formatter_info() {
     'gmap_geo' => array(
       'label' => t('GMap'),
       'field types' => array('geo', 'geo_data'),
-      'multiple values' => CONTENT_HANDLE_CORE,
-//      'multiple values' => CONTENT_HANDLE_MODULE,
+      'multiple values' => CONTENT_HANDLE_MODULE,
     ),
     'gmap_geo_simplify' => array(
       'label' => t('Simplified Polygon on a GMap'),
       'field types' => array('geo', 'geo_data'),
-      'multiple values' => CONTENT_HANDLE_CORE,
+      'multiple values' => CONTENT_HANDLE_MODULE,
     ),
   );
 }
@@ -180,76 +179,87 @@ function gmap_geo_field_formatter_info() {
  * within the visible area, they may be rendered incorrectly.
  */
 function theme_gmap_geo_formatter($element) {
-  static $count = 0;
-  static $base_maps = array();
+  $i = 0;
+  $total_points = 0;
+  while (isset($element[$i])) {
+    $item = $element[$i]['#item'];
+    $i++;
   
-  // load some functions from content.module
-  if ($base_maps == array()) {
-    module_load_include('inc', 'content', 'includes/content.crud');
-  }
-  // Load field instance info. If the field uses the gmap_picker widget, display
-  // points on the widget's gmap macro.
-  if (!isset($base_maps[$element['#type_name']][$element['#field_name']])) {
-    $base_maps[$element['#type_name']][$element['#field_name']] = array();
-    $field = content_field_instance_read(array('type_name' => $element['#type_name'], 'field_name' => $element['#field_name']));
-    if ($field[0]['widget']['type'] == 'gmap_picker') {
-      $base_maps[$element['#type_name']][$element['#field_name']] = gmap_parse_macro($field[0]['widget']['gmap_picker_macro']);
+    if ($total_points > 1000) {
+      $i = -1;
+      drupal_set_message(t('Some data is not displayed on the map because there are too many items.'), 'warning');
+      break;
     }
-  }
-  $field_map = $base_maps[$element['#type_name']][$element['#field_name']];
 
-  // get the feature's coordinates
-  $geodata = _gmap_geo_from_wkt($element['#item']['wkt']);
+    // get the feature's coordinates
+    $geodata = _gmap_geo_from_wkt($item['wkt']);
+  
+    switch ($geodata['type']) {
+      case 'POINT':
+        foreach($geodata['data'] as $point) {
+          $coords = explode(' ', $point);
+          $map['markers'][] = array('longitude' => $coords[0], 'latitude' => $coords[1]);
+          $total_points++;
+        }
+        break;
+      case 'POLYGON':
+      case 'LINESTRING':
+        if (isset($item['centroid'])) {
+          $centroid_raw = _gmap_geo_from_wkt($item['centroid']);
+          $centroid = explode(' ', reset($centroid_raw['data']));
+          // autozoom for polygons is coming in GMap 1.1 (2008-12-30)
+          $map['latitude'] = $centroid[0];
+          $map['longitude'] = $centroid[1];
+        }
 
-  switch ($geodata['type']) {
-    case 'POINT':
-      foreach($geodata['data'] as $point) {
-        $coords = explode(' ', $point);
-        $map['markers'][] = array('longitude' => $coords[0], 'latitude' => $coords[1]);
-      }
-      break;
-    case 'POLYGON':
-      // map center
-      $centroid_raw = _gmap_geo_from_wkt($element['#item']['centroid']);
-      $centroid = explode(' ', $centroid_raw['data'][0]);
-      $map['latitude'] = $centroid[0];
-      $map['longitude'] = $centroid[1];
-    case 'LINESTRING': // polys AND lines
-      // get feature coordinates
-      foreach($geodata['data'] as $point) {
-        $coords = explode(' ', $point);
-        $shape_coords[] = $coords;
-      }
-      
-      // not sure how this would handle line data -- likely it would be fine, if you worked out a centroid.
-      if ($geodata['type'] == 'POLYGON' && $element['#formatter'] == 'gmap_geo_simplify') {
-        module_load_include('inc', 'gmap_geo', 'simplify');
-        $shape_coords = gmap_geo_simplify($shape_coords, $centroid);
-      }
+        // get feature coordinates
+        $shape_coords = array();
+        foreach($geodata['data'] as $point) {
+          $shape_coords[] = explode(' ', $point);
+        }
+        
+        // polygon simplification is resource intensive.
+        // I am not sure how well this handles line data -- quite possibly it
+        // would be fine, if you provide a centroid.
+        if ($element['#formatter'] == 'gmap_geo_simplify' && isset($centroid)) {
+          module_load_include('inc', 'gmap_geo', 'simplify');
+          $shape_coords = gmap_geo_simplify($shape_coords, $centroid);
+        }
 
-      // if the poly/line is too complex, let's not crash the browser...
-      if (count($shape_coords) < 200) {
-        $map['shapes'][] = array(
-          'type' => ($geodata['type'] == 'POLYGON' ? 'polygon' : 'line'),
-          'points' => $shape_coords,
-        );
-      }
-      else {
-        $map['markers'][] = array(
-          'longitude' => $centroid[0],
-          'latitude' => $centroid[1],
-          'text' => t('This shape has too many points to display on a Google Map')
-        );
-      }
-      break;
+        // if the poly/line is too complex, let's not crash the browser...
+        if (count($shape_coords) < 200) {
+          $map['shapes'][] = array(
+            'type' => ($geodata['type'] == 'POLYGON' ? 'polygon' : 'line'),
+            'points' => $shape_coords,
+          );
+          $total_points += count($shape_coords);
+        }
+        else {
+          $map['markers'][] = array(
+            'longitude' => $centroid[0],
+            'latitude' => $centroid[1],
+            'text' => t('This shape has too many points to display on a Google Map')
+          );
+          $total_points++;
+        }
+        break;
+    }
   }
   
   if ($map) {
+    // Load field instance info. If the field uses the gmap_picker widget, use
+    // the widget's gmap macro to build the map array.
+    module_load_include('inc', 'content', 'includes/content.crud');
+    $field = content_field_instance_read(array('type_name' => $element['#type_name'], 'field_name' => $element['#field_name']));
+    if ($field[0]['widget']['type'] == 'gmap_picker') {
+      $field_map = gmap_parse_macro($field[0]['widget']['gmap_picker_macro']);
+      $map = array_merge($field_map, $map);
+    }
+  
     $map['behavior'] = array('autozoom');
     if (isset($field_map['zoom'])) {
       $map['maxzoom'] = $field_map['zoom'];
     }
-    $map = array_merge($field_map, $map);
     return theme('gmap', $map);
   }
 }

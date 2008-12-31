@@ -12,20 +12,27 @@
  *   An array of the shape's vertices; each vertex is represented as array(x, y)
  * @param $centroid
  *   The centroid of the shape, represented as array(x, y)
+ * @param $num_interesting_vertices
+ *   Defaults to 20. How many 'interesting' vertices will be kept in the first round.
+ * @param $restore_threshold
+ *   Defaults to 1. Approximate allowed error, as miles between a point and its approximating line.
+ * @param $restore_span
+ *   Defaults to 10. Approximate maximum resolution of restored points in long spans, as miles.
  * @return
  *   An array of points which approximates the original shape. This set of 
  *   points will be a subset of the original array.
+ *
+ * A note on the use of "miles" in $restore_threshold and $restore_span: these
+ * are approximate; by "miles" I mean "distance when lat/lon is treated as a
+ * rectangular grid and 1 degree = 69 miles." Precision is not necessary here,
+ * and "miles" are used for convenience.
  *
  * Within the body of this function:
  *   $vertices is the original set of vertices
  *   $vertices_rev1 is the first, "interesting" set of vertices
  *   $vertices_rev2 is the second, "restored" set of vertices, and the return value of the fn.
  */
-function gmap_geo_simplify($vertices, $centroid) {
-  $num_interesting_vertices = 20;   // how many vertices in the first round?
-  $restore_threshold = 1;           // allowed error (miles)
-  $restore_span = 10;               // maximum resolution of restored points (miles)
-  
+function gmap_geo_simplify($vertices, $centroid, $num_interesting_vertices = 20, $restore_threshold = 1, $restore_span = 10) {
   if (count($vertices) <= $num_interesting_vertices + 10) {
     return $vertices;
   }
