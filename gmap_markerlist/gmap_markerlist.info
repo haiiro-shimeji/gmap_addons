@@ -1,0 +1,6 @@
+; $Id$
+name = GMap Marker List (ALPHA)
+description = Display a list of markers inside the map.
+dependencies[] = gmap
+package = Location
+core = 6.x
