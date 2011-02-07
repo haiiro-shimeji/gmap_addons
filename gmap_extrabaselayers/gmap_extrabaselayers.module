@@ -10,7 +10,7 @@ function gmap_extrabaselayers_gmap($op, &$map = null) {
   switch ($op) {
     case 'pre_theme_map':
       // @@@
-      drupal_add_js(drupal_get_path('module', 'gmap_extrabaselayers') .'/gmap_extrabaselayers.js');
+      drupal_add_js(drupal_get_path('module', 'gmap_extrabaselayers') .'/gmap_extrabaselayers.js', array('weight' => 10));
       break;
 
     case 'baselayers':

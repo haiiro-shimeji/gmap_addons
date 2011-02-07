@@ -2,5 +2,6 @@
 name = GMap Extra Baselayers
 description = Enable adding the special Moon, Mars, and Sky map types to a map.
 package = Location
-core = 6.x
+core = 7.x
 dependencies[] = gmap
+files[] = gmap_extrabaselayers.module
