@@ -19,16 +19,16 @@ function gmap_overlays_gmap($op, &$map) {
         foreach ($map['overlay'] as $overlay) {
           switch ($overlay['type']) {
             case 'clientsidekml':
-              drupal_add_js(drupal_get_path('module', 'gmap_overlays') .'/thirdparty/egeoxml.js');
+              drupal_add_js(drupal_get_path('module', 'gmap_overlays') .'/thirdparty/egeoxml.js', array('weight' => 20));
             case 'kml':
             case 'georss':
-              drupal_add_js($path .'overlay_geoxml.js');
+              drupal_add_js($path .'overlay_geoxml.js', array('weight' => 20));
               break;
             case 'traffic':
-              drupal_add_js($path .'overlay_traffic.js');
+              drupal_add_js($path .'overlay_traffic.js', array('weight' => 20));
               break;
             case 'tile':
-              drupal_add_js($path .'overlay_tile.js');
+              drupal_add_js($path .'overlay_tile.js', array('weight' => 20));
               break;
           }
         }
