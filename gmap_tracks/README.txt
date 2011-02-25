@@ -1,4 +1,3 @@
-$Id$
 
 This will let you use PLT tracks.
 

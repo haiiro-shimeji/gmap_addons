@@ -1,4 +1,3 @@
-// $Id$
 
 Drupal.behaviors.location_quickgeocode = function (context) {
   $('div.location_quickgeocode:not(.location-quickgeocode-processed)', context).addClass('location-quickgeocode-processed').each(function() {

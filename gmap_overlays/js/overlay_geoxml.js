@@ -1,7 +1,6 @@
 /**
  *  Handle overlays via GGeoXml.
  */
-/* $Id$ */
 
 Drupal.gmap.clientsidexml = {};
 

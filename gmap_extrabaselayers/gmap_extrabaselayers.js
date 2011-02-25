@@ -1,4 +1,3 @@
-// $Id$
 
 
 Drupal.gmap.addHandler('gmap',function(elem) {

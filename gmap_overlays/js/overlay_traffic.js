@@ -1,7 +1,6 @@
 /**
  *  The Google Maps Traffic Overlay.
  */
-/* $Id$ */
 
 Drupal.gmap.addHandler('gmap', function(elem) {
   var obj = this;

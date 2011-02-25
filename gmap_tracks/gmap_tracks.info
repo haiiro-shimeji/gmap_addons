@@ -1,4 +1,3 @@
-; $Id$
 name = GMap Tracks
 description = PLT tracks for GMap.
 package = Location

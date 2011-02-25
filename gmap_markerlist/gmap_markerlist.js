@@ -1,4 +1,3 @@
-/* $Id$ */
 
 (function () {
   var MarkerList = function (gmap) {
