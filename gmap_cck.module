@@ -21,7 +21,11 @@
  */
 function gmap_cck_field_info() {
   return array(
-    'gmap_cck' => array('label' => 'Google map view'),
+      'gmap_cck' => array(
+          'label' => 'Google map view',
+          'default_widget' => 'gmap_cck',
+          'default_formatter' => 'default',
+      )
   );
 }
 
@@ -87,8 +91,10 @@ function gmap_cck_field_info() {
  *     attribute in order to let the user distinguish between them. If no 'name'
  *     is specified for a filter, the key of the filter will be used instead.
  */
+/*
 function gmap_cck_field_settings($op, $field) {
   switch ($op) {
+    //  implements in gmap_cck_field_settings_form().
     case 'form':
       $def = gmap_defaults();
       foreach (array('maptype', 'controltype', 'width', 'height', 'latlong') as $key) {
@@ -115,54 +121,125 @@ function gmap_cck_field_settings($op, $field) {
 
       if (count($gpx_opts) > 1) {
         $form['gpx'] = array(
-          '#type' => 'select',
-          '#title' => t("GPX File support"),
-          '#options' => array(
-            0 => t('Disabled'),
-            'filefield' => t('CCK Filefield'),
-          ),
-          '#default_value' => $field['gpx'],
+            '#type' => 'select',
+            '#title' => t("GPX File support"),
+            '#options' => array(
+                0 => t('Disabled'),
+                'filefield' => t('CCK Filefield'),
+            ),
+            '#default_value' => $field['gpx'],
         );
 
         // if gpx-support is enabled we need a source for the data
         $form['gpx_src'] = array(
-          '#type' => 'textfield',
-          '#title' => t('GPX data source parameter'),
-          '#description' => t('Only used if gpx-support is enabled'),
-          '#default_value' => $field['gpx_src'],
+            '#type' => 'textfield',
+            '#title' => t('GPX data source parameter'),
+            '#description' => t('Only used if gpx-support is enabled'),
+            '#default_value' => $field['gpx_src'],
         );
       }
 
       // noderef field(s) to nodes with locations for markers
       if (module_exists('nodereference')) {
         $form['marker_noderef'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Marker noderef'),
-          '#description' => t('Name of noderef field to nodes to show as markers'),
-          '#default_value' => $field['marker_noderef']
+            '#type' => 'textfield',
+            '#title' => t('Marker noderef'),
+            '#description' => t('Name of noderef field to nodes to show as markers'),
+            '#default_value' => $field['marker_noderef']
         );
       }
 
       return $form;
 
+    //  @note should be implemented in hook_field_settings_form_validate().
     case 'validate': // check stuff entered in form-fields
       break;
 
+    //  @note no need to implements D7 hook?
     case 'save':
       return array('maptype', 'controltype', 'width', 'height', 'alignment',
-                   'zoom', 'latlong', 'gpx', 'gpx_src', 'marker_noderef');
+          'zoom', 'latlong', 'gpx', 'gpx_src', 'marker_noderef');
 
+    //  @note no need to implements D7 hook?
     case 'database columns':
       $columns = array( // TODO: ??? type -> longtext ???
-        'value' => array('type' => 'varchar', 'length' => 255, 'not null' => true, 'default' => "''", 'sortable' => false),
+          'value' => array('type' => 'varchar', 'length' => 255, 'not null' => true, 'default' => "''", 'sortable' => false),
       );
       return $columns;
 
+    //  @note no need to implements D7 hook?
     case 'callbacks': // CHECK: ??? any effect on calling ..._field() ???
       return array(
-        'view' => CONTENT_CALLBACK_CUSTOM,
+          'view' => CONTENT_CALLBACK_CUSTOM,
       );
   }
+}
+ * 
+ */
+
+/**
+ * Implements hook_field_settings_form().
+ */
+function gmap_cck_field_settings_form($field, $instance, $has_data) {
+
+	$def = gmap_defaults();
+	foreach (array('maptype', 'controltype', 'width', 'height', 'latlong') as $key) {
+		if (isset($field[$key]) && !empty($field[$key])) {
+			$def[$key] = $field[$key];
+		}
+	}
+
+	$f = gmap_macro_builder_form($def);
+  //  the member what is not array caused "Undefined operand error".
+	$form = array( "macroform" => $f["macroform"] );
+  
+	$form['#title'] = t('Google Map settings');
+	// keep: mapdiv
+	unset($form['macroform']['overlayedit']);
+	unset($form['macroform']['mapid']);
+	// keep: maptype, controltype
+	unset($form['macroform']['address']);
+	//unset($form['macroform']['latlong']);
+	// keep: width, height, alignment, zoom
+	unset($form['macroform']['macro']);
+
+	// GPX file support
+	$gpx_opts = array(t('Disabled'));
+	if (module_exists('filefield'))
+		$gpx_opts['filefield'] = t('CCK Filefield');
+	// TODO: attachment to node, uploaded file, url from user, ...
+
+	if (count($gpx_opts) > 1) {
+		$form['gpx'] = array(
+			'#type' => 'select',
+			'#title' => t("GPX File support"),
+			'#options' => array(
+				0 => t('Disabled'),
+				'filefield' => t('CCK Filefield'),
+			),
+			'#default_value' => $field['gpx'],
+		);
+
+		// if gpx-support is enabled we need a source for the data
+		$form['gpx_src'] = array(
+			'#type' => 'textfield',
+			'#title' => t('GPX data source parameter'),
+			'#description' => t('Only used if gpx-support is enabled'),
+			'#default_value' => $field['gpx_src'],
+		);
+	}
+
+	// noderef field(s) to nodes with locations for markers
+	if (module_exists('nodereference')) {
+		$form['marker_noderef'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Marker noderef'),
+			'#description' => t('Name of noderef field to nodes to show as markers'),
+			'#default_value' => $field['marker_noderef']
+		);
+	}
+
+	return $form;
 }
 
 /**
@@ -204,8 +281,10 @@ function gmap_cck_field_settings($op, $field) {
  * In most cases, only "validate" operations is relevant ; the rest
  * have default implementations in content_field() that usually suffice.
  */
+/*
 function gmap_cck_field($op, &$node, $field, &$items, $teaser, $page) {
   switch ($op) {
+    //@TODO meybe should be inplemented in D7 hook (what is ?).
     case 'view':
       $context = $teaser ? 'teaser' : 'full';
       $formatter = isset($field['display_settings'][$context]['format'])
@@ -216,6 +295,8 @@ function gmap_cck_field($op, &$node, $field, &$items, $teaser, $page) {
       return theme('field', $node, $field, $items, $teaser, $page);
   }
 }
+ * 
+ */
 
 /**
  * Declare information about a formatter.
@@ -231,8 +312,8 @@ function gmap_cck_field_formatter_info() {
   return array(
     'default' => array(
       'label' => t('Default map'),
-      'field types' => array('gmap_cck'),
-    ),
+      'field types' => array('gmap_cck')
+   ),
     // TODO: add list of configurable small map-displays
   );
 }
@@ -296,7 +377,7 @@ function gmap_cck_field_formatter($field, $item, $formatter, $node) {
  *   - "field types": An array of field type names that can be edited using
  *     this widget.
  */
-function gmap_cck_widget_info() {
+function gmap_cck_field_widget_info() {
   return array(
     'gmap_cck' => array(
       'label' => 'Google Map',
@@ -372,6 +453,8 @@ function gmap_cck_widget_settings($op, $widget) {
  *   - The "form" operation should return an array of form elements to display.
  *   - Other operations have no return value.
  */
+/*
+ *  @note is this function compatible D6 hook_widget?
 function gmap_cck_widget($op, &$node, $field, &$items) {
 
   switch ($op) {
@@ -386,6 +469,7 @@ function gmap_cck_widget($op, &$node, $field, &$items) {
       // if ($field['multiple']) { ??? }
       break;
 
+    //  @note implements in gmap_cck_field_widget_form().
     case 'form':
       $rd =& $items[0]['raw']; // raw data
       if (empty($rd)) $rd = array();
@@ -432,11 +516,11 @@ function gmap_cck_widget($op, &$node, $field, &$items) {
     case 'process form values':
       // TODO: if ($field['multiple']) ...
       // get the values and build serialized array for db-save
-/*      $ms = '[gmap zoom='. $items['zoom'] .'|center='.
-            $items['latlong'] .'|width='. $field['width'] .'|height='.
-            $field['height'] .'|id=gmap_'. $field['field_name'] .'|control='.
-            $field['controltype'] .'|type='. $field['maptype'] .']';
-*/
+//      $ms = '[gmap zoom='. $items['zoom'] .'|center='.
+//          $items['latlong'] .'|width='. $field['width'] .'|height='.
+//          $field['height'] .'|id=gmap_'. $field['field_name'] .'|control='.
+//          $field['controltype'] .'|type='. $field['maptype'] .']';
+
       $v = array('zoom' => $items['zoom'], 'latlong' => $items['latlong']);
       // TODO: add more props like 'markers', gpx-file, ...
       foreach ($items as $delta => $item) {
@@ -451,6 +535,67 @@ function gmap_cck_widget($op, &$node, $field, &$items) {
       $items[0]['value'] = serialize($v);// $ms;
       break;
   }
+}
+*/
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function gmap_cck_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+	
+	$rd = & $items[0]['raw']; // raw data
+	if (empty($rd))
+		$rd = array();
+
+	$ndefs = array(
+		'maptype' => $field['maptype'],
+		'width' => $field['width'],
+		'height' => $field['height'],
+		'zoom' => $field['zoom'],
+		'latlong' => $field['latlong'],
+	);
+
+	if (isset($rd['gpx'])) {
+		$gpx_support = array('#value' => 'GPX support enabled');
+		_gmap_cck_get_gpx($rd, $field, $node);
+	}
+	$ndefs = array_merge(gmap_defaults(), $ndefs, $rd);
+	$hide = array('mapid' => 1, // type=hidden
+		'width' => 1, 'height' => 1, 'alignment' => 1, // 'zoom' => 2,
+		'maptype' => 1, 'controltype' => 1, 'macro' => 2,
+	);
+  
+	$f = gmap_macro_builder_form($ndefs, $hide);
+  //  the member what is not array caused "Undefined operand error".
+  $form = array( "macroform" => $f["macroform"] );
+
+	// remove/hide unwanted parts of form
+	$mf = & $form['macroform'];
+	$mf['#title'] = t('Select map view');
+	unset($mf['overlayedit'], $mf['address']);
+
+	foreach ($mf as $key => $val) {
+		if ($key[0] == '#')
+			continue;
+		$mf['#tree'] = true;
+		$mf['#parents'] = array($field['field_name']);
+	}
+
+	$form[$field['field_name']] = $form['macroform'];
+	unset($form['macroform']);
+
+	if (isset($gpx_support)) {
+		$form['gpx_support'] = $gpx_support;
+	}
+
+	return $form;
+}
+
+/**
+ * Implements hook_field_widget_error().
+ */
+function gmap_cck_field_widget_error($element, $error, $form, &$form_state) {
+  form_error($element['value'], $error['message']);
 }
 
 /**

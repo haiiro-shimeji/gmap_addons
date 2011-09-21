@@ -1,4 +1,5 @@
 name = GMap CCK Field
 description = Filter to allow insertion of a google map into a node
 package = Location
+core = 7.x
 dependencies = gmap content gmap_macro_builder
