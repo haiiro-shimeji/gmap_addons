@@ -23,8 +23,19 @@ function gmap_cck_field_info() {
   return array(
       'gmap_cck' => array(
           'label' => 'Google map view',
+          'settings' => array(
+              'maptype' => '', 
+              'controltype' => '', 
+              'width' => '300px', 
+              'height' => '200px', 
+              'alignment' => '',
+              'zoom' => '9', 
+              'latlong' => '', 
+              'gpx' => '', 
+              'gpx_src' => '', 
+              'marker_noderef' => '' ),
           'default_widget' => 'gmap_cck',
-          'default_formatter' => 'default',
+          'default_formatter' => 'gmap_cck',
       )
   );
 }
@@ -179,8 +190,11 @@ function gmap_cck_field_settings($op, $field) {
 
 /**
  * Implements hook_field_settings_form().
+ * @note two google map instances in the display causes error.
+ * and i wonder it is not need because those settings is able to input when
+ * edit the article.
  */
-function gmap_cck_field_settings_form($field, $instance, $has_data) {
+function gmap_cck_field_instance_settings_form($field, $instance, $has_data) {
 
 	$def = gmap_defaults();
 	foreach (array('maptype', 'controltype', 'width', 'height', 'latlong') as $key) {
@@ -310,7 +324,7 @@ function gmap_cck_field($op, &$node, $field, &$items, $teaser, $page) {
  */
 function gmap_cck_field_formatter_info() {
   return array(
-    'default' => array(
+    'gmap_cck' => array(
       'label' => t('Default map'),
       'field types' => array('gmap_cck')
    ),
@@ -342,28 +356,37 @@ function gmap_cck_field_formatter_info() {
  * It is important that this function at the minimum perform security
  * transformations such as running check_plain() or check_markup().
  */
-function gmap_cck_field_formatter($field, $item, $formatter, $node) {
-  if (!isset($item['value'])) {
-    return '';
+function gmap_cck_field_formatter_view( $entity_type, $entity, $field, $instance, $langcode, $items, $display ) {
+  
+  $elements = array();
+  
+  foreach ( $items as $delta=>$m ) {
+    
+    if (!is_array($m)) $m = array();
+    if (!empty($field['gpx']) && _gmap_cck_check_gpx_source($m, $field, $node)) {
+      _gmap_cck_get_gpx($m, $field, $node);
+    }
+    if (!empty($field['marker_noderef'])) {
+      _gmap_cck_noderef_markers($m, $field, $node);
+    }
+    $map = array_merge(gmap_defaults(), $field, $m);
+
+    $map['#map'] = 'gmap';
+    if (isset($node) && isset($node->nid)) $map['#map'] .= '_'. $node->nid;
+    $map['#map'] .= '_'. $field['field_name'];
+
+    // TODO: correct width, height & zoom if ($formatter != 'default')
+    
+    $elements[$delta] = array(
+        "#type" => "gmap",
+        "#gmap_settings" => $map
+//        "#markup" => theme('gmap', array('element' => array( '#gmap_settings' => $map)))
+    );
+    
   }
 
-  $m = unserialize($item['value']);
-  if (!is_array($m)) $m = array();
-  if (!empty($field['gpx']) && _gmap_cck_check_gpx_source($m, $field, $node)) {
-    _gmap_cck_get_gpx($m, $field, $node);
-  }
-  if (!empty($field['marker_noderef'])) {
-    _gmap_cck_noderef_markers($m, $field, $node);
-  }
-  $map = array_merge(gmap_defaults(), $field, $m);
-
-  $map['id'] = 'gmap';
-  if (isset($node) && isset($node->nid)) $map['id'] .= '_'. $node->nid;
-  $map['id'] .= '_'. $field['field_name'];
-
-  // TODO: correct width, height & zoom if ($formatter != 'default')
-
-  return theme('gmap', array('#settings' => $map));
+  return $elements;
+  
 }
 
 
@@ -412,6 +435,7 @@ function gmap_cck_field_widget_info() {
  *     All other widget operation implemented by the module _will_ be executed
  *     no matter what.
  */
+/*
 function gmap_cck_widget_settings($op, $widget) {
   switch ($op) {
 
@@ -421,6 +445,7 @@ function gmap_cck_widget_settings($op, $widget) {
       );
   }
 }
+ */
 
 /**
  * Define the behavior of a widget.
@@ -548,11 +573,11 @@ function gmap_cck_field_widget_form(&$form, &$form_state, $field, $instance, $la
 		$rd = array();
 
 	$ndefs = array(
-		'maptype' => $field['maptype'],
-		'width' => $field['width'],
-		'height' => $field['height'],
-		'zoom' => $field['zoom'],
-		'latlong' => $field['latlong'],
+		'maptype' => $field['settings']['maptype'],
+		'width' => $field['settings']['width'],
+		'height' => $field['settings']['height'],
+		'zoom' => $field['settings']['zoom'],
+		'latlong' => $field['settings']['latlong'],
 	);
 
 	if (isset($rd['gpx'])) {
@@ -565,30 +590,27 @@ function gmap_cck_field_widget_form(&$form, &$form_state, $field, $instance, $la
 		'maptype' => 1, 'controltype' => 1, 'macro' => 2,
 	);
   
-	$f = gmap_macro_builder_form($ndefs, $hide);
-  //  the member what is not array caused "Undefined operand error".
-  $form = array( "macroform" => $f["macroform"] );
+	$f = gmap_macro_builder_form($form, $form_state, $ndefs, $hide);
 
 	// remove/hide unwanted parts of form
-	$mf = & $form['macroform'];
+	$mf = & $f['macroform'];
 	$mf['#title'] = t('Select map view');
-	unset($mf['overlayedit'], $mf['address']);
+  
+//  remove #overlayedit makes disable the function to point on the map.
+//	unset($mf['overlayedit'], $mf['address']);
 
-	foreach ($mf as $key => $val) {
-		if ($key[0] == '#')
-			continue;
-		$mf['#tree'] = true;
-		$mf['#parents'] = array($field['field_name']);
-	}
-
-	$form[$field['field_name']] = $form['macroform'];
-	unset($form['macroform']);
+//	foreach ($mf as $key => $val) {
+//		if ($key[0] == '#')
+//			continue;
+//		$mf['#tree'] = true;
+//		$mf['#parents'] = array($field['field_name']);
+//	}
 
 	if (isset($gpx_support)) {
 		$form['gpx_support'] = $gpx_support;
 	}
 
-	return $form;
+	return $mf;
 }
 
 /**
@@ -596,6 +618,31 @@ function gmap_cck_field_widget_form(&$form, &$form_state, $field, $instance, $la
  */
 function gmap_cck_field_widget_error($element, $error, $form, &$form_state) {
   form_error($element['value'], $error['message']);
+}
+
+function gmap_cck_field_is_empty($item, $field) {
+}
+
+/**
+ * Implements hook_field_presave().
+ */
+function gmap_cck_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  foreach ($items as $delta => $value) {
+    $macro = gmap_parse_macro( $items[$delta]["macro"] );
+    $data = serialize( array_merge( $macro, $items[$delta] ) );
+    $items[$delta] = array( "data" => $data );
+  }
+}
+
+/**
+ * Implements hook_field_prepare_view().
+ */
+function gmap_cck_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
+  foreach ($items as $entity_id => &$entity_items) {
+    foreach ($entity_items as $delta => $value) {
+      $entity_items[$delta] = unserialize( $value["data"] );
+    }
+  }
 }
 
 /**

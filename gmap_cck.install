@@ -1,0 +1,22 @@
+<?php
+// $Id: gmap_cck.install $
+
+/**
+ * @file
+ * Install file for the gmap_cck module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function gmap_cck_field_schema($field) {
+  return array(
+    'columns' => array(
+      'data' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => FALSE
+      ),
+    ),
+  );
+}
