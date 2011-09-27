@@ -34,6 +34,15 @@ function gmap_cck_field_info() {
               'gpx' => '', 
               'gpx_src' => '', 
               'marker_noderef' => '' ),
+          'instance_setting' => array(
+              'maptype' => '', 
+              'controltype' => '', 
+              'width' => '300px', 
+              'height' => '200px', 
+              'alignment' => '',
+              'zoom' => '9', 
+              'latlong' => null, 
+           ),
           'default_widget' => 'gmap_cck',
           'default_formatter' => 'gmap_cck',
       )
@@ -45,16 +54,17 @@ function gmap_cck_field_info() {
  * Implements hook_field_instance_settings_form().
  * 
  */
-function gmap_cck_field_instance_settings_form($field, $instance, $has_data) {
+function gmap_cck_field_instance_settings_form($field, $instance) {
 
 	$def = gmap_defaults();
-	foreach (array('maptype', 'controltype', 'width', 'height', 'latlong') as $key) {
-		if (isset($field[$key]) && !empty($field[$key])) {
-			$def[$key] = $field[$key];
-		}
-	}
-
-	$f = gmap_macro_builder_form($def);
+  foreach ( $field['settings'] as $key => $value )
+			if ( $value ) $def[$key] = $value;
+  foreach ( $instance['settings']['macroform'] as $key => $value )
+			if ( $value ) $def[$key] = $value;
+  
+  $f = array();
+  $form_state = array();
+	$f = gmap_macro_builder_form( $f, $form_state, $def );
   //  the member what is not array caused "Undefined operand error".
 	$form = array( "macroform" => $f["macroform"] );
   
@@ -200,7 +210,7 @@ function gmap_cck_field_widget_form(&$form, &$form_state, $field, $instance, $la
 	}
 	$ndefs = array_merge(gmap_defaults(), $ndefs, $rd);
 	$hide = array('mapid' => 1, // type=hidden
-		'width' => 1, 'height' => 1, 'alignment' => 1, // 'zoom' => 2,
+		'width' => 1, 'height' => 1, //'alignment' => 1, // 'zoom' => 2,
 		'maptype' => 1, 'controltype' => 1, 'macro' => 2,
 	);
   
@@ -264,7 +274,8 @@ function gmap_cck_field_prepare_view($entity_type, $entities, $field, $instances
 
 function _gmap_cck_parse_data( &$entity_items ) {
   foreach ($entity_items as $delta => $value) {
-    $entity_items[$delta] = unserialize( $value["data"] );
+    if ( isset( $value["data"] ) )
+      $entity_items[$delta] = unserialize( $value["data"] );
   }
 }
 
