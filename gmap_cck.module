@@ -30,7 +30,7 @@ function gmap_cck_field_info() {
               'height' => '200px', 
               'alignment' => '',
               'zoom' => '9', 
-              'latlong' => '', 
+              'latlong' => null, 
               'gpx' => '', 
               'gpx_src' => '', 
               'marker_noderef' => '' ),
@@ -180,17 +180,19 @@ function gmap_cck_field_widget_info() {
  */
 function gmap_cck_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
 	
-	$rd = & $items[0]['raw']; // raw data
+  _gmap_cck_parse_data($items);
+	$rd = & $items[0]; // raw data
 	if (empty($rd))
 		$rd = array();
+  
+  unset( $rd["id"] );
 
-	$ndefs = array(
-		'maptype' => $field['settings']['maptype'],
-		'width' => $field['settings']['width'],
-		'height' => $field['settings']['height'],
-		'zoom' => $field['settings']['zoom'],
-		'latlong' => $field['settings']['latlong'],
-	);
+	$ndefs = array();
+  if ( isset($field['settings']['maptype']) and $field['settings']['maptype'] ) $ndefs['maptype'] = $field['settings']['maptype'];
+  if ( isset($field['settings']['width']) and $field['settings']['width'] ) $ndefs['width'] = $field['settings']['width'];
+  if ( isset($field['settings']['height']) and $field['settings']['height'] ) $ndefs['height'] = $field['settings']['height'];
+  if ( isset($field['settings']['zoom']) and $field['settings']['zoom'] ) $ndefs['zoom'] = $field['settings']['zoom'];
+  if ( isset($field['settings']['latlong']) and $field['settings']['latlong'] ) $ndefs['latlong'] = $field['settings']['latlong'];
 
 	if (isset($rd['gpx'])) {
 		$gpx_support = array('#value' => 'GPX support enabled');
@@ -207,6 +209,7 @@ function gmap_cck_field_widget_form(&$form, &$form_state, $field, $instance, $la
 	// remove/hide unwanted parts of form
 	$mf = & $f['macroform'];
 	$mf['#title'] = t('Select map view');
+  $mf['mapdiv']['#gmap_settings'] = &$mf['mapdiv']['#settings'];
   
 //  remove #overlayedit makes disable the function to point on the map.
 //	unset($mf['overlayedit'], $mf['address']);
@@ -251,15 +254,19 @@ function gmap_cck_field_presave($entity_type, $entity, $field, $instance, $langc
  */
 function gmap_cck_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
   foreach ($items as $entity_id => &$entity_items) {
-    foreach ($entity_items as $delta => $value) {
-      $entity_items[$delta] = unserialize( $value["data"] );
-    }
+    _gmap_cck_parse_data( $entity_items );
   }
 }
 
 /**
  * @} End of "addtogroup hooks".
  */
+
+function _gmap_cck_parse_data( &$entity_items ) {
+  foreach ($entity_items as $delta => $value) {
+    $entity_items[$delta] = unserialize( $value["data"] );
+  }
+}
 
 function _gmap_cck_check_gpx_source(&$data, &$field, &$node) {
   $r = true;
