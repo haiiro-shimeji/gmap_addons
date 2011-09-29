@@ -152,9 +152,9 @@ function gmap_cck_field_formatter_view( $entity_type, $entity, $field, $instance
     }
     $map = array_merge(gmap_defaults(), $field, $m);
 
-    $map['#map'] = 'gmap';
-    if (isset($node) && isset($node->nid)) $map['#map'] .= '_'. $node->nid;
-    $map['#map'] .= '_'. $field['field_name'];
+    $map['id'] = 'gmap';
+    if (isset($node) && isset($node->nid)) $map['id'] .= '_n'. $node->nid;
+    $map['id'] .= '_'. $field['field_name'];
 
     // TODO: correct width, height & zoom if ($formatter != 'default')
     
