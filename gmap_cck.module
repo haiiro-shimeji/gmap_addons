@@ -211,7 +211,7 @@ function gmap_cck_field_widget_form(&$form, &$form_state, $field, $instance, $la
 	$ndefs = array_merge(gmap_defaults(), $ndefs, $rd);
 	$hide = array('mapid' => 1, // type=hidden
 		'width' => 1, 'height' => 1, //'alignment' => 1, // 'zoom' => 2,
-		'maptype' => 1, 'controltype' => 1, //'macro' => 2,
+		'maptype' => 1, 'controltype' => 1, 'macro' => 2,
 	);
   
 	$f = gmap_macro_builder_form($form, $form_state, $ndefs, $hide);
