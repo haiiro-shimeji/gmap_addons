@@ -211,7 +211,7 @@ function gmap_cck_field_widget_form(&$form, &$form_state, $field, $instance, $la
 	$ndefs = array_merge(gmap_defaults(), $ndefs, $rd);
 	$hide = array('mapid' => 1, // type=hidden
 		'width' => 1, 'height' => 1, //'alignment' => 1, // 'zoom' => 2,
-		'maptype' => 1, 'controltype' => 1, 'macro' => 2,
+		'maptype' => 1, 'controltype' => 1, //'macro' => 2,
 	);
   
 	$f = gmap_macro_builder_form($form, $form_state, $ndefs, $hide);
@@ -253,9 +253,9 @@ function gmap_cck_field_is_empty($item, $field) {
  */
 function gmap_cck_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
   foreach ($items as $delta => $value) {
-    $macro = gmap_parse_macro( $items[$delta]["macro"] );
+    $macro = gmap_parse_macro( $items[$delta]['macro'] );
     $data = serialize( array_merge( $macro, $items[$delta] ) );
-    $items[$delta] = array( "data" => $data );
+    $items[$delta] = array( 'data' => $data );
   }
 }
 
@@ -274,8 +274,10 @@ function gmap_cck_field_prepare_view($entity_type, $entities, $field, $instances
 
 function _gmap_cck_parse_data( &$entity_items ) {
   foreach ($entity_items as $delta => $value) {
-    if ( isset( $value["data"] ) )
-      $entity_items[$delta] = unserialize( $value["data"] );
+    if ( isset( $value['data'] ) )
+      $entity_items[$delta] = unserialize( $value['data'] );
+    else if ( isset( $value['macro'] ) )  //  for preview mode ('data' is not set).
+      $entity_items[$delta] += gmap_parse_macro( $value['macro'] );
   }
 }
 
