@@ -231,7 +231,10 @@ function gmap_cck_field_widget_form(&$form, &$form_state, $field, $instance, $la
 //		$mf['#parents'] = array($field['field_name']);
 //	}
 
-	if (isset($gpx_support)) {
+  $mf['overlayedit']['#attributes']['class'][] = 'collapsible';
+  $mf['overlayedit']['#attributes']['class'][] = 'collapsed';
+
+  if (isset($gpx_support)) {
 		$form['gpx_support'] = $gpx_support;
 	}
 
