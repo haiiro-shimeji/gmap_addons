@@ -252,17 +252,6 @@ function gmap_cck_field_is_empty($item, $field) {
 }
 
 /**
- * Implements hook_field_presave().
- */
-function gmap_cck_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  foreach ($items as $delta => $value) {
-    $macro = gmap_parse_macro( $items[$delta]['macro'] );
-    $data = serialize( array_merge( $macro, $items[$delta] ) );
-    $items[$delta] = array( 'data' => $data );
-  }
-}
-
-/**
  * Implements hook_field_prepare_view().
  */
 function gmap_cck_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
@@ -277,9 +266,7 @@ function gmap_cck_field_prepare_view($entity_type, $entities, $field, $instances
 
 function _gmap_cck_parse_data( &$entity_items ) {
   foreach ($entity_items as $delta => $value) {
-    if ( isset( $value['data'] ) )
-      $entity_items[$delta] = unserialize( $value['data'] );
-    else if ( isset( $value['macro'] ) )  //  for preview mode ('data' is not set).
+    if ( isset( $value['macro'] ) )  //  for preview mode ('data' is not set).
       $entity_items[$delta] += gmap_parse_macro( $value['macro'] );
   }
 }
